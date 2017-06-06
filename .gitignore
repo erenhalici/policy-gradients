@@ -1,0 +1,4 @@
+
+*.pyc
+save.p
+model.ckpt
