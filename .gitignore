@@ -1,4 +1,5 @@
 
 *.pyc
 save.p
-model.ckpt
+checkpoint
+model.ckpt*
