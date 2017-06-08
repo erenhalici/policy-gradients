@@ -14,42 +14,43 @@ random.seed()
 episode_count = 1000000
 steps_per_episode = 1000
 step_size = 0
-epsilon_steps = 100000
-min_epsilon = 0.05
+epsilon_steps = 1
+min_epsilon = 0.0
 replay_size = 1
 batch_size = 1
-fc_sizes = [128, 128]
+fc_sizes = [128]
 learning_rate = 1e-3
 reward_gamma = 0.99
 render = True
 max_action = False
 restore = False
 
-# episode_count = 10000000
-# steps_per_episode = 1000
-# step_size = 0
-# epsilon_steps = 1000000
-# min_epsilon = 0.05
-# replay_size = 1
-# batch_size = 1
-# fc_sizes = [128, 128]
-# learning_rate = 1e-5
-# reward_gamma = 0.99
-# env_name = 'LunarLander-v2'
-
 episode_count = 1000000
-steps_per_episode = 1000
+steps_per_episode = 10000
 step_size = 0
-# epsilon_steps = 100000
 epsilon_steps = 1
-# min_epsilon = 0.05
 min_epsilon = 0.0
-replay_size = 10
-batch_size = 10
-fc_sizes = [128, 128]
+replay_size = 100
+batch_size = 100
+fc_sizes = [128]
 learning_rate = 1e-3
 reward_gamma = 0.99
-env_name = 'CartPole-v1'
+max_action = False
+env_name = 'LunarLander-v2'
+
+# episode_count = 1000000
+# steps_per_episode = 1000
+# step_size = 0
+# # epsilon_steps = 100000
+# epsilon_steps = 1
+# # min_epsilon = 0.05
+# min_epsilon = 0.0
+# replay_size = 10
+# batch_size = 10
+# fc_sizes = [128, 128]
+# learning_rate = 1e-3
+# reward_gamma = 0.99
+# env_name = 'CartPole-v1'
 
 # episode_count = 10000
 # steps_per_episode = 1000
@@ -139,6 +140,9 @@ for i in range(episode_count):
       add_experience(experience)
       if (i % batch_size) == 0:
         train_model()
+        with open("output.txt", "a") as outfile:
+          outfile.write(("Episode {0:05d} finished after {1:03d} timesteps. Total Reward: {2:03.2f} Expected Reward: {3:03.2f} Reward Std: {4:03.2f} (epsilon: {5:.2f})\n".format(i, t+1, total_reward, expected_reward, reward_std, epsilon)))
+
 
       if (i % 100) == 0:
         model.save()
