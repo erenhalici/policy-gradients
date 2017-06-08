@@ -40,9 +40,9 @@ class Toy(gym.Env):
 
     if mode == 'human':
       if self._state == 3:
-        print "Game Ended! Failed: {}".format(self._failed)
+        print("Game Ended! Failed: {}").format(self._failed)
       else:
-        print "State: {}, Expected Input: {}, Failed: {}".format(self._state, self._sequence[self._state], self._failed)
+        print("State: {}, Expected Input: {}, Failed: {}").format(self._state, self._sequence[self._state], self._failed)
     # elif mode == 'rgb_array':
       # return img
 

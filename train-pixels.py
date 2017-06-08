@@ -23,7 +23,7 @@ batch_size = 1
 fc_sizes = [128, 128]
 learning_rate = 1e-3
 reward_gamma = 0.99
-render = True
+render = False
 max_action = True
 restore = False
 
@@ -52,7 +52,7 @@ def prepro(I):
 env = gym.make(env_name)
 num_inputs  = 80*80
 num_outputs = 2
-print env.action_space.n
+print(env.action_space.n)
 
 model = Model(num_inputs, num_outputs, fc_sizes=fc_sizes, learning_rate=learning_rate)
 
@@ -124,6 +124,9 @@ for i in range(episode_count):
       add_experience(experience)
       if i%batch_size == 0:
         train_model()
+        with open("output.txt", "a") as outfile:
+          outfile.write(("Episode {0:05d} finished after {1:03d} timesteps. Total Reward: {2:03.2f} Expected Reward: {3:03.2f} Reward Std: {4:03.2f} (epsilon: {5:.2f})\n".format(i, t+1, total_reward, expected_reward, reward_std, epsilon)))
+
 
       if (i % 100) == 0:
         model.save()
