@@ -14,6 +14,7 @@ random.seed()
 episode_count = 1000000
 steps_per_episode = 1000
 step_size = 0
+temporal_window = 1
 epsilon_steps = 1
 min_epsilon = 0.0
 replay_size = 1
@@ -27,13 +28,11 @@ restore = False
 
 episode_count = 1000000
 steps_per_episode = 10000
-step_size = 0
-epsilon_steps = 1
-min_epsilon = 0.0
+temporal_window = 4
 replay_size = 100
 batch_size = 100
 fc_sizes = [128]
-learning_rate = 1e-3
+learning_rate = 1e-4
 reward_gamma = 0.99
 max_action = False
 env_name = 'LunarLander-v2'
@@ -74,7 +73,7 @@ register(
 )
 
 env = gym.make(env_name)
-num_inputs  = env.observation_space.shape[0]
+num_inputs  = env.observation_space.shape[0] * temporal_window
 # num_inputs  = env.observation_space.n
 num_outputs = env.action_space.n
 
@@ -98,9 +97,15 @@ def train_model():
 expected_reward = 0
 reward_std = 0
 
-for i in range(episode_count):
+def get_state():
+  return np.stack(temporal_queue).ravel()
 
+for i in range(episode_count):
+  temporal_queue = []
   state = env.reset()
+  for j in range(temporal_window):
+    temporal_queue.append(state)
+
   total_reward = 0
 
   experience = []
@@ -111,8 +116,8 @@ for i in range(episode_count):
     if random.random() < epsilon:
       action = env.action_space.sample()
     else:
-      if max_action: action = model.get_max_action(state)
-      else: action = model.get_action(state)
+      if max_action: action = model.get_max_action(get_state())
+      else: action = model.get_action(get_state())
       # print "max action is: " + str(action)
 
     if epsilon > min_epsilon:
@@ -122,8 +127,11 @@ for i in range(episode_count):
     new_state, reward, done, info = env.step(action)
     # if done and t >= 599:
     #   reward += 200
+    temporal_queue.pop(0)
+    temporal_queue.append(new_state)
 
-    experience.append((state, action, reward))
+
+    experience.append((get_state(), action, reward))
     state = new_state
     total_reward += reward
 
@@ -141,12 +149,13 @@ for i in range(episode_count):
       if (i % batch_size) == 0:
         train_model()
         with open("output.txt", "a") as outfile:
-          outfile.write(("Episode {0:05d} finished after {1:03d} timesteps. Total Reward: {2:03.2f} Expected Reward: {3:03.2f} Reward Std: {4:03.2f} (epsilon: {5:.2f})\n".format(i, t+1, total_reward, expected_reward, reward_std, epsilon)))
+          string = ("Episode {0:05d} finished after {1:03d} timesteps. Total Reward: {2:03.2f} Expected Reward: {3:03.2f} Reward Std: {4:03.2f} (epsilon: {5:.2f})".format(i, t+1, total_reward, expected_reward, reward_std, epsilon))
+          outfile.write(string + '\n')
+          print(string)
 
-
-      if (i % 100) == 0:
+      if (i % 1000) == 0:
         model.save()
 
       break
 
-  print("Episode {0:05d} finished after {1:03d} timesteps. Total Reward: {2:03.2f} Expected Reward: {3:03.2f} Reward Std: {4:03.2f} (epsilon: {5:.2f})".format(i, t+1, total_reward, expected_reward, reward_std, epsilon))
+  # print("Episode {0:05d} finished after {1:03d} timesteps. Total Reward: {2:03.2f} Expected Reward: {3:03.2f} Reward Std: {4:03.2f} (epsilon: {5:.2f})".format(i, t+1, total_reward, expected_reward, reward_std, epsilon))
