@@ -1,4 +1,5 @@
-
+output
+run.sh
 *.pyc
 save.p
 checkpoint
