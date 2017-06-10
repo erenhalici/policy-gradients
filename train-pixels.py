@@ -9,6 +9,7 @@ from gym import wrappers
 from model import *
 import toy_env
 
+import time
 from PIL import Image
 
 random.seed()
@@ -24,8 +25,21 @@ fc_sizes = [128, 128]
 learning_rate = 1e-3
 reward_gamma = 0.99
 render = False
-max_action = True
+max_action = False
 restore = False
+
+# episode_count = 1000000
+# steps_per_episode = 10000
+# step_size = 0
+# epsilon_steps = 1
+# min_epsilon = 0.0
+# replay_size = 10
+# batch_size = 10
+# fc_sizes = [128]
+# learning_rate = 1e-3
+# reward_gamma = 0.99
+# env_name = 'Pong-v0'
+# max_action = False
 
 episode_count = 1000000
 steps_per_episode = 10000
@@ -37,22 +51,19 @@ batch_size = 10
 fc_sizes = [128]
 learning_rate = 1e-3
 reward_gamma = 0.99
-env_name = 'Pong-v0'
+env_name = 'Breakout-v0'
 max_action = False
 
 def prepro(I):
   """ prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector """
   I = I[35:195] # crop
   I = I[::2,::2,0] # downsample by factor of 2
-  I[I == 144] = 0 # erase background (background type 1)
-  I[I == 109] = 0 # erase background (background type 2)
   I[I != 0] = 1 # everything else (paddles, ball) just set to 1
   return I.astype(np.float).ravel()
 
 env = gym.make(env_name)
 num_inputs  = 80*80
-num_outputs = 2
-print(env.action_space.n)
+num_outputs = env.action_space.n
 
 model = Model(num_inputs, num_outputs, fc_sizes=fc_sizes, learning_rate=learning_rate)
 
@@ -86,14 +97,16 @@ for i in range(episode_count):
     if render: env.render()
 
     cur_state = prepro(state)
-    state = cur_state - prev_state if prev_state is not None else np.zeros(num_inputs)
+    # state = cur_state - prev_state if prev_state is not None else np.zeros(num_inputs)
+    state = cur_state
     # Image.fromarray(state.reshape(80,80)*255).show()
+    # time.sleep(1)
     prev_state = cur_state
 
     if random.random() < epsilon:
       # action = env.action_space.sample()
       # print action
-      action = random.randint(0,1)
+      action = env.action_space.sample()
     else:
       if max_action: action = model.get_max_action(state)
       else: action = model.get_action(state)
@@ -103,7 +116,7 @@ for i in range(episode_count):
       epsilon -= (1.0 - min_epsilon)/epsilon_steps + 0.00000000001
 
     # print "Taking action: {}".format(action)
-    new_state, reward, done, info = env.step(action+2)
+    new_state, reward, done, info = env.step(action)
     # if done and t >= 599:
     #   reward += 200
 
@@ -125,12 +138,13 @@ for i in range(episode_count):
       if i%batch_size == 0:
         train_model()
         with open("output.txt", "a") as outfile:
-          outfile.write(("Episode {0:05d} finished after {1:03d} timesteps. Total Reward: {2:03.2f} Expected Reward: {3:03.2f} Reward Std: {4:03.2f} (epsilon: {5:.2f})\n".format(i, t+1, total_reward, expected_reward, reward_std, epsilon)))
-
+          string = "Episode {0:05d} finished after {1:03d} timesteps. Total Reward: {2:03.2f} Expected Reward: {3:03.2f} Reward Std: {4:03.2f} (epsilon: {5:.2f})".format(i, t+1, total_reward, expected_reward, reward_std, epsilon)
+          outfile.write(string + "\n")
+          print(string)
 
       if (i % 100) == 0:
         model.save()
 
       break
 
-  print("Episode {0:05d} finished after {1:03d} timesteps. Total Reward: {2:03.2f} Expected Reward: {3:03.2f} Reward Std: {4:03.2f} (epsilon: {5:.2f})".format(i, t+1, total_reward, expected_reward, reward_std, epsilon))
+
