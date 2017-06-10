@@ -49,6 +49,7 @@ class Model(object):
 
   def get_action(self, state):
     dist = self._sess.run(self._action_distribution, feed_dict={self._states: [state]})
+    # print(dist)
     r = random.random()
 
     s = 0
@@ -119,9 +120,9 @@ class Model(object):
     return self._max_action
 
   def weight_variable(self, shape):
-    initial = tf.truncated_normal(shape, stddev=0.1)
+    initial = tf.truncated_normal(shape, stddev=0.01)
     return tf.Variable(initial)
 
   def bias_variable(self, shape):
-    initial = tf.constant(0.1, shape=shape)
+    initial = tf.constant(0.01, shape=shape)
     return tf.Variable(initial)
