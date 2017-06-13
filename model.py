@@ -23,8 +23,8 @@ class Model(object):
       h_conv_2 = self.conv_layer(h_conv_1, count, count)
       last_h = self.max_pool_2x2(h_conv_2)
 
-      width = width/2 - 2
-      height = height/2 - 2
+      width = int(width/2) - 2
+      height = int(height/2) - 2
       last_filter_count = count
 
     last_size = width * height * last_filter_count
@@ -51,7 +51,7 @@ class Model(object):
 
     self._saver = tf.train.Saver()
     config = tf.ConfigProto(
-      device_count = {'GPU': 0}
+    #   device_count = {'GPU': 0}
     )
     self._sess = tf.Session(config=config)
     self._sess.run(tf.global_variables_initializer())
