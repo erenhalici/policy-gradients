@@ -4,17 +4,31 @@ import tensorflow as tf
 import random
 
 class Model(object):
-  def __init__(self, num_inputs, num_outputs, fc_sizes=[128, 128], gamma=0.995, learning_rate=1e-4):
+  def __init__(self, width, height, channels, num_outputs, filter_counts=[32, 64, 128], fc_sizes=[128, 128], gamma=0.995, learning_rate=1e-4):
     self._gamma = gamma
 
     self._num_outputs = num_outputs
 
-    self._states = tf.placeholder(tf.float32, [None, num_inputs])
+    self._states = tf.placeholder(tf.float32, [None, width, height, channels])
     self._actions = tf.placeholder(tf.float32, [None, num_outputs])
     self._rewards = tf.placeholder(tf.float32, [None, num_outputs])
 
     last_h = self._states
-    last_size = num_inputs
+    # last_size = num_inputs
+
+    last_filter_count = channels
+
+    for count in filter_counts:
+      h_conv_1 = self.conv_layer(last_h, last_filter_count, count)
+      h_conv_2 = self.conv_layer(h_conv_1, count, count)
+      last_h = self.max_pool_2x2(h_conv_2)
+
+      width = width/2 - 2
+      height = height/2 - 2
+      last_filter_count = count
+
+    last_size = width * height * last_filter_count
+    last_h = tf.reshape(last_h, [-1, last_size])
 
     for size in fc_sizes:
       W = self.weight_variable([last_size, size])
@@ -126,3 +140,14 @@ class Model(object):
   def bias_variable(self, shape):
     initial = tf.constant(0.01, shape=shape)
     return tf.Variable(initial)
+
+  def conv2d(self, x, W, stride=1):
+    return tf.nn.conv2d(x, W, strides=[1, stride, stride, 1], padding="VALID")
+
+  def conv_layer(self, input_layer, input_channes, output_channels):
+    W_conv = self.weight_variable([3, 3, input_channes, output_channels])
+    b_conv = self.bias_variable([output_channels])
+    return tf.nn.relu(self.conv2d(input_layer, W_conv) + b_conv)
+
+  def max_pool_2x2(self, x):
+    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')

@@ -17,6 +17,7 @@ epsilon_steps = 100000
 min_epsilon = 0.05
 replay_size = 1
 batch_size = 1
+filter_counts = [32, 64, 128]
 fc_sizes = [128, 128]
 learning_rate = 1e-3
 reward_gamma = 0.99
@@ -57,14 +58,19 @@ def prepro(I):
   I[I == 144] = 0 # erase background (background type 1)
   I[I == 109] = 0 # erase background (background type 2)
   I[I != 0] = 1 # everything else (paddles, ball) just set to 1
-  return I.astype(np.float).ravel()
+  # return I.astype(np.float).ravel()
+  return np.reshape(I, [80, 80, 1])
 
 env = gym.make(env_name)
-num_inputs  = 80*80
+# num_inputs  = 80*80
 # num_outputs = env.action_space.n
+width = 80
+height = 80
+channels = 1
 num_outputs = 2
 
-model = Model(num_inputs, num_outputs, fc_sizes=fc_sizes, learning_rate=learning_rate)
+# model = Model(num_inputs, num_outputs, fc_sizes=fc_sizes, learning_rate=learning_rate)
+model = Model(width, height, channels, num_outputs, filter_counts=filter_counts, fc_sizes=fc_sizes, learning_rate=learning_rate)
 
 if restore: model.restore()
 
@@ -96,8 +102,8 @@ for i in range(episode_count):
     if render: env.render()
 
     cur_state = prepro(state)
-    state = cur_state - prev_state if prev_state is not None else np.zeros(num_inputs)
-    # state = cur_state
+    # state = cur_state - prev_state if prev_state is not None else np.zeros(num_inputs)
+    state = cur_state
     # Image.fromarray(state.reshape(80,80)*255).show()
     # time.sleep(1)
     prev_state = cur_state
