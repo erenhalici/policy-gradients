@@ -18,14 +18,22 @@ class Model(object):
 
     last_filter_count = channels
 
+    # for count in filter_counts:
+    #   h_conv_1 = self.conv_layer(last_h, last_filter_count, count)
+    #   h_conv_2 = self.conv_layer(h_conv_1, count, count)
+    #   last_h = self.max_pool_2x2(h_conv_2)
+
+    #   width = int(width/2) - 2
+    #   height = int(height/2) - 2
+    #   last_filter_count = count
     for count in filter_counts:
       h_conv_1 = self.conv_layer(last_h, last_filter_count, count)
-      h_conv_2 = self.conv_layer(h_conv_1, count, count)
-      last_h = self.max_pool_2x2(h_conv_2)
+      last_h = self.max_pool_2x2(h_conv_1)
 
-      width = int(width/2) - 2
-      height = int(height/2) - 2
+      width = int((width-2)/2)
+      height = int((height-2)/2)
       last_filter_count = count
+
 
     last_size = width * height * last_filter_count
     last_h = tf.reshape(last_h, [-1, last_size])
@@ -51,7 +59,7 @@ class Model(object):
 
     self._saver = tf.train.Saver()
     config = tf.ConfigProto(
-    #   device_count = {'GPU': 0}
+      device_count = {'GPU': 0}
     )
     self._sess = tf.Session(config=config)
     self._sess.run(tf.global_variables_initializer())
@@ -65,6 +73,8 @@ class Model(object):
     dist = self._sess.run(self._action_distribution, feed_dict={self._states: [state]})
     # print(dist)
     r = random.random()
+
+    if r > 0.99999: return len(dist[0])-1
 
     s = 0
     i = -1
@@ -81,8 +91,9 @@ class Model(object):
     # print self._sess.run(self._action_distribution, feed_dict={self._states: states})
     # print self._sess.run(self._errors, feed_dict={self._states: states, self._actions: actions, self._rewards: rewards})
     # expected_reward += abs(expected_reward) * 0.01
-    expected_reward = 0.0
-    reward_std = 1.0
+    expected_reward = np.mean(rewards)
+    reward_std = np.std(rewards)
+    print expected_reward, reward_std
     self._sess.run(self._train_step, feed_dict={self._states: states, self._actions: actions, self._rewards: (rewards - np.float64(expected_reward))/reward_std})
     # self._sess.run(self._train_step, feed_dict={self._states: states, self._actions: actions, self._rewards: rewards})
     # print self._sess.run(self._action_distribution, feed_dict={self._states: states})
