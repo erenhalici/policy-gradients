@@ -32,8 +32,9 @@ min_epsilon = 0.0
 replay_size = 10
 batch_size = 10
 fc_sizes = [128]
-learning_rate = 1e-3
+learning_rate = 1e-4
 reward_gamma = 0.99
+spasm_penalty = 0.01
 env_name = 'Pong-v0'
 max_action = False
 
@@ -60,9 +61,9 @@ def prepro(I):
   return I.astype(np.float).ravel()
 
 env = gym.make(env_name)
-num_inputs  = 80*80
+num_inputs  = 80*80*2
 # num_outputs = env.action_space.n
-num_outputs = 2
+num_outputs = 3
 
 model = Model(num_inputs, num_outputs, fc_sizes=fc_sizes, learning_rate=learning_rate)
 
@@ -88,6 +89,8 @@ prev_state = None
 
 for i in range(episode_count):
   state = env.reset()
+  prev_state = np.zeros(80*80)
+  last_action = None
   total_reward = 0
 
   experience = []
@@ -96,14 +99,15 @@ for i in range(episode_count):
     if render: env.render()
 
     cur_state = prepro(state)
-    state = cur_state - prev_state if prev_state is not None else np.zeros(num_inputs)
+    # state = cur_state - prev_state if prev_state is not None else np.zeros(num_inputs)
+    state = np.concatenate([cur_state, prev_state])
     # Image.fromarray((state.reshape(80,80)+1)*127).show()
     # time.sleep(1)
     prev_state = cur_state
 
     if random.random() < epsilon:
       # action = env.action_space.sample()
-      action = random.randint(0,1)
+      action = random.randint(0,2)
       # print action
     else:
       if max_action: action = model.get_max_action(state)
@@ -114,9 +118,13 @@ for i in range(episode_count):
       epsilon -= (1.0 - min_epsilon)/epsilon_steps + 0.00000000001
 
     # print "Taking action: {}".format(action)
-    new_state, reward, done, info = env.step(action+2)
+    new_state, reward, done, info = env.step(action+1)
     # if done and t >= 599:
     #   reward += 200
+
+    if action != last_action:
+      reward -= spasm_penalty
+    last_action = action
 
     experience.append((state, action, reward))
     state = new_state
