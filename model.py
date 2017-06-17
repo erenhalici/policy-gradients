@@ -44,13 +44,13 @@ class Model(object):
 
   def get_max_action(self, state):
     [dist, act] = self._sess.run([self._action_distribution, self._max_action], feed_dict={self._states: [state]})
-    # print dist[0]
     return act[0]
 
   def get_action(self, state):
     dist = self._sess.run(self._action_distribution, feed_dict={self._states: [state]})
-    # print(dist)
     r = random.random()
+
+    if r > 0.99999: return len(dist[0])-1
 
     s = 0
     i = -1
@@ -63,16 +63,9 @@ class Model(object):
 
   def train(self, experience, expected_reward=0.0, reward_std=1.0):
     states, actions, rewards = self.reward_reduced_experience(experience)
-    # print rewards
-    # print self._sess.run(self._action_distribution, feed_dict={self._states: states})
-    # print self._sess.run(self._errors, feed_dict={self._states: states, self._actions: actions, self._rewards: rewards})
-    # expected_reward += abs(expected_reward) * 0.01
-    expected_reward = 0.0
-    reward_std = 1.0
+    expected_reward = np.mean(rewards)
+    reward_std = np.std(rewards)
     self._sess.run(self._train_step, feed_dict={self._states: states, self._actions: actions, self._rewards: (rewards - np.float64(expected_reward))/reward_std})
-    # self._sess.run(self._train_step, feed_dict={self._states: states, self._actions: actions, self._rewards: rewards})
-    # print self._sess.run(self._action_distribution, feed_dict={self._states: states})
-    # print self._sess.run(self._errors, feed_dict={self._states: states, self._actions: actions, self._rewards: rewards})
 
   def reward_reduced_experience(self, experience_replay):
     states = []
