@@ -31,7 +31,7 @@ epsilon_steps = 1
 min_epsilon = 0.0
 replay_size = 10
 batch_size = 10
-fc_sizes = [128]
+fc_sizes = [256]
 learning_rate = 1e-4
 reward_gamma = 0.99
 spasm_penalty = 0.01
@@ -61,7 +61,7 @@ def prepro(I):
   return I.astype(np.float).ravel()
 
 env = gym.make(env_name)
-num_inputs  = 80*80*2
+num_inputs  = 80*80*2 + 3
 # num_outputs = env.action_space.n
 num_outputs = 3
 
@@ -100,7 +100,9 @@ for i in range(episode_count):
 
     cur_state = prepro(state)
     # state = cur_state - prev_state if prev_state is not None else np.zeros(num_inputs)
-    state = np.concatenate([cur_state, prev_state])
+    action_vector = np.zeros(num_outputs)
+    if last_action != None: action_vector[last_action] = 1
+    state = np.concatenate((cur_state, prev_state, action_vector))
     # Image.fromarray((state.reshape(80,80)+1)*127).show()
     # time.sleep(1)
     prev_state = cur_state
